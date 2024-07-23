@@ -1,4 +1,4 @@
-use std::{array, collections::HashMap, error::Error, io::Write};
+use std::{array, collections::HashMap, error::Error};
 const START_YEAR:usize = 1984;
 const YEARS:usize = 40;
 
@@ -20,7 +20,7 @@ pub struct Info{
     pub sex: u8,
 }
 
-fn load()->Result<HashMap<String, Info>, Box<dyn Error>>{
+/*fn load()->Result<HashMap<String, Info>, Box<dyn Error>>{
     let input = std::fs::read_to_string("OGDEXT_VORNAMEN_1.csv")?;
     let mut names = HashMap::new();
     for line in input.lines().skip(1){
@@ -46,7 +46,7 @@ fn serialize(names: &HashMap<String, Info>, writer: &mut impl Write) -> Result<(
         }
     }
     Ok(())
-}
+}*/
 
 pub fn deserialize(reader: &mut impl std::io::Read)-> Result<HashMap<String, Info>, Box<dyn Error>> {
     let mut names = HashMap::new();
