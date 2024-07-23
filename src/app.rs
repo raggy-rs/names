@@ -1,25 +1,32 @@
-/// We derive Deserialize/Serialize so we can persist app state on shutdown.
-#[derive(serde::Deserialize, serde::Serialize)]
-#[serde(default)] // if we add new fields, give them default values when deserializing old state
-pub struct TemplateApp {
-    // Example stuff:
-    label: String,
+use std::collections::{BTreeSet, HashMap};
 
-    #[serde(skip)] // This how you opt-out of serialization of a field
-    value: f32,
+use crate::names::{self, Info, NameEntry};
+
+/// We derive Deserialize/Serialize so we can persist app state on shutdown.
+//#[derive(serde::Deserialize, serde::Serialize)]
+//#[serde(default)] // if we add new fields, give them default values when deserializing old state
+pub struct NamesApp {
+    part: String,
+    names: Vec<NameEntry>,
+    selected: BTreeSet<String>,
+    max_len: usize,
 }
 
-impl Default for TemplateApp {
+impl Default for NamesApp {
     fn default() -> Self {
+        let mut data = std::io::Cursor::new(include_bytes!("../names.bin"));
+        let mut names: Vec<NameEntry> = names::deserialize(&mut data).expect("could not parse name data").into_iter().map(|(name,info)|NameEntry::new(name, info)).collect();
+        names.sort_by_key(|x|(!x.year_count.iter().skip(35).sum::<u32>(), x.name.to_owned()));
         Self {
-            // Example stuff:
-            label: "Hello World!".to_owned(),
-            value: 2.7,
+            part: "".to_owned(),
+            names, //: vec![NameEntry::new("Max".to_string(), Info{ sex: 1, year_count: [1;40]})],
+            max_len: 4,
+            selected: BTreeSet::new(),
         }
     }
 }
 
-impl TemplateApp {
+impl NamesApp {
     /// Called once before the first frame.
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         // This is also where you can customize the look and feel of egui using
@@ -27,18 +34,18 @@ impl TemplateApp {
 
         // Load previous app state (if any).
         // Note that you must enable the `persistence` feature for this to work.
-        if let Some(storage) = cc.storage {
+        /*if let Some(storage) = cc.storage {
             return eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
-        }
+        }*/
 
         Default::default()
     }
 }
 
-impl eframe::App for TemplateApp {
+impl eframe::App for NamesApp {
     /// Called by the frame work to save state before shutdown.
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
-        eframe::set_value(storage, eframe::APP_KEY, self);
+        //eframe::set_value(storage, eframe::APP_KEY, self);
     }
 
     /// Called each time the UI needs repainting, which may be many times per second.
@@ -64,46 +71,31 @@ impl eframe::App for TemplateApp {
                 egui::widgets::global_dark_light_mode_buttons(ui);
             });
         });
+        egui::SidePanel::right("right_side").show(ctx, |ui|{
+            self.selected.retain(|name|!ui.button(name).clicked());
+        });
 
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
-            ui.heading("eframe template");
+            ui.heading("Names");
 
             ui.horizontal(|ui| {
-                ui.label("Write something: ");
-                ui.text_edit_singleline(&mut self.label);
+                ui.label("Contains: ");
+                ui.text_edit_singleline(&mut self.part);
             });
 
-            ui.add(egui::Slider::new(&mut self.value, 0.0..=10.0).text("value"));
-            if ui.button("Increment").clicked() {
-                self.value += 1.0;
-            }
+            ui.add(egui::Slider::new(&mut self.max_len, 0..=20).text("max lenght"));
 
             ui.separator();
-
-            ui.add(egui::github_link_file!(
-                "https://github.com/emilk/eframe_template/blob/main/",
-                "Source code."
-            ));
-
-            ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
-                powered_by_egui_and_eframe(ui);
-                egui::warn_if_debug_build(ui);
+            //let re = regex::Regex::new(&self.part).unwrap();
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                for entry in self.names.iter().filter(|x|x.name.len()<= self.max_len && x.sex==1 && x.name.contains(&self.part)){
+                    if ui.button(format!("{} {}",entry.name, entry.total)).clicked(){
+                        self.selected.insert(entry.name.clone());
+                    }//, entry.year_count));
+                }
             });
         });
     }
 }
 
-fn powered_by_egui_and_eframe(ui: &mut egui::Ui) {
-    ui.horizontal(|ui| {
-        ui.spacing_mut().item_spacing.x = 0.0;
-        ui.label("Powered by ");
-        ui.hyperlink_to("egui", "https://github.com/emilk/egui");
-        ui.label(" and ");
-        ui.hyperlink_to(
-            "eframe",
-            "https://github.com/emilk/egui/tree/master/crates/eframe",
-        );
-        ui.label(".");
-    });
-}
