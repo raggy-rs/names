@@ -1,22 +1,43 @@
 use std::{array, collections::HashMap, error::Error};
-const START_YEAR:usize = 1984;
-const YEARS:usize = 40;
 
-pub struct NameEntry{
+use serde::{Deserialize, Serialize};
+const START_YEAR: usize = 1984;
+const YEARS: usize = 40;
+#[derive(PartialEq, Eq, Debug, Clone, Copy, Deserialize, Serialize)]
+pub enum Rating {
+    Good,
+    Bad,
+}
+#[derive(Deserialize, Serialize)]
+pub struct NameEntry {
     pub name: String,
-    pub year_count: [u32;40],
+    pub year_count: [u32; 8],
     pub sex: u8,
     pub total: u32,
+    pub comments: String,
+    pub rating: Option<Rating>,
 }
 
-impl NameEntry{
-    pub fn new(name: String, info: Info)->Self{
-        Self{name, sex: info.sex, total: info.year_count.iter().sum(), year_count:info.year_count}
+impl NameEntry {
+    pub fn new(name: String, info: Info) -> Self {
+        let mut five_years = info
+            .year_count
+            .array_chunks()
+            .map(|a: &[u32; 5]| a.iter().sum::<u32>());
+        Self {
+            name,
+            sex: info.sex,
+            total: info.year_count.iter().sum(),
+            year_count: array::try_from_fn(|_| five_years.next())
+                .expect("could not aggregate year_count"),
+            comments: String::new(),
+            rating: None,
+        }
     }
 }
 #[derive(PartialEq, Eq, Debug)]
-pub struct Info{
-    pub year_count: [u32;40],
+pub struct Info {
+    pub year_count: [u32; 40],
     pub sex: u8,
 }
 
@@ -48,10 +69,12 @@ fn serialize(names: &HashMap<String, Info>, writer: &mut impl Write) -> Result<(
     Ok(())
 }*/
 
-pub fn deserialize(reader: &mut impl std::io::Read)-> Result<HashMap<String, Info>, Box<dyn Error>> {
+pub fn deserialize(
+    reader: &mut impl std::io::Read,
+) -> Result<HashMap<String, Info>, Box<dyn Error>> {
     let mut names = HashMap::new();
-    let mut u32_buf= [0;4];
-    let mut buf = [0;256];
+    let mut u32_buf = [0; 4];
+    let mut buf = [0; 256];
     reader.read_exact(&mut u32_buf)?;
     let start_year = u32::from_le_bytes(u32_buf) as usize;
     assert_eq!(START_YEAR, start_year);
@@ -60,23 +83,31 @@ pub fn deserialize(reader: &mut impl std::io::Read)-> Result<HashMap<String, Inf
     assert_eq!(YEARS, years);
     reader.read_exact(&mut u32_buf)?;
     let names_len = u32::from_le_bytes(u32_buf) as usize;
-    for _ in 0..names_len{
+    for _ in 0..names_len {
         reader.read_exact(&mut u32_buf[0..2])?;
-        let sex = u32_buf[0]; 
+        let sex = u32_buf[0];
         let name_len = u32_buf[1] as usize;
         reader.read_exact(&mut buf[0..name_len])?;
-        
+
         let name = String::from_utf8(buf[0..name_len].to_vec())?;
-        reader.read_exact(&mut buf[0..YEARS*4])?;
-        let mut counts = buf[0..YEARS*4].array_chunks().map(|&x|u32::from_le_bytes(x));
-        names.insert(name, Info{sex, year_count: array::try_from_fn(|_|counts.next()).unwrap()});
+        reader.read_exact(&mut buf[0..YEARS * 4])?;
+        let mut counts = buf[0..YEARS * 4]
+            .array_chunks()
+            .map(|&x| u32::from_le_bytes(x));
+        names.insert(
+            name,
+            Info {
+                sex,
+                year_count: array::try_from_fn(|_| counts.next()).unwrap(),
+            },
+        );
     }
 
     Ok(names)
 }
 /*
 fn main() -> Result<(),Box<dyn Error>>{
-    //let names = load()?;    
+    //let names = load()?;
     //serialize(&names, &mut std::fs::File::create("names.bin")?)?;
     let mut data = std::io::Cursor::new(include_bytes!("../names.bin"));
     //let mut data = std::fs::File::open("names.bin")?;
@@ -104,7 +135,7 @@ fn main() -> Result<(),Box<dyn Error>>{
             println!("not found");
             continue;
         };
-        println!(" {query} {:?} {}",occurences.year_count,occurences.year_count.iter().sum::<u32>()); 
+        println!(" {query} {:?} {}",occurences.year_count,occurences.year_count.iter().sum::<u32>());
     }
-    
+
 }*/
