@@ -796,9 +796,8 @@ checksum = "9ea835d29036a4087793836fa931b08837ad5e957da9e23886b29586fb9b6650"
 
 [[package]]
 name = "ecolor"
-version = "0.28.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2cabe0a45c3736c274bc650ca02ab293eb2ad1a3870f6033590ca7a3ee9963c"
+version = "0.28.1"
+source = "git+https://github.com/micmonay/egui/?branch=fix-keyboard#3607b114e46023a4adfde8305734b3893c78f951"
 dependencies = [
  "bytemuck",
  "emath",
@@ -807,9 +806,8 @@ dependencies = [
 
 [[package]]
 name = "eframe"
-version = "0.28.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e20189790fd16dc370379cee34032a114a029707947fe1b0d6b6362d3847c296"
+version = "0.28.1"
+source = "git+https://github.com/micmonay/egui/?branch=fix-keyboard#3607b114e46023a4adfde8305734b3893c78f951"
 dependencies = [
  "ahash",
  "bytemuck",
@@ -844,9 +842,8 @@ dependencies = [
 
 [[package]]
 name = "egui"
-version = "0.28.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9dce16991290ee6395f3780b9b0db15bf0368bce2f31f2e9ba276d26e4b09cda"
+version = "0.28.1"
+source = "git+https://github.com/micmonay/egui/?branch=fix-keyboard#3607b114e46023a4adfde8305734b3893c78f951"
 dependencies = [
  "accesskit",
  "ahash",
@@ -860,9 +857,8 @@ dependencies = [
 
 [[package]]
 name = "egui-winit"
-version = "0.28.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ef6d149cc9db915f34df8a90eb81853c9376044fc938f67d848729b27c6b0128"
+version = "0.28.1"
+source = "git+https://github.com/micmonay/egui/?branch=fix-keyboard#3607b114e46023a4adfde8305734b3893c78f951"
 dependencies = [
  "accesskit_winit",
  "ahash",
@@ -879,9 +875,8 @@ dependencies = [
 
 [[package]]
 name = "egui_glow"
-version = "0.28.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa80fb1b442fdf521db80dd3fb8fd01cf885f428c1b16d62959a249909bf541e"
+version = "0.28.1"
+source = "git+https://github.com/micmonay/egui/?branch=fix-keyboard#3607b114e46023a4adfde8305734b3893c78f951"
 dependencies = [
  "ahash",
  "bytemuck",
@@ -895,9 +890,8 @@ dependencies = [
 
 [[package]]
 name = "emath"
-version = "0.28.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "275f98c04af8359eeef56af16dfafd2bc7a65d9c0e5f2f00918057ca90a9fba8"
+version = "0.28.1"
+source = "git+https://github.com/micmonay/egui/?branch=fix-keyboard#3607b114e46023a4adfde8305734b3893c78f951"
 dependencies = [
  "bytemuck",
  "serde",
@@ -950,9 +944,8 @@ dependencies = [
 
 [[package]]
 name = "epaint"
-version = "0.28.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "205d6fcd02317e3e06cb32d28f821dd549b14ab12da6ff283dda57c4ebe4cb45"
+version = "0.28.1"
+source = "git+https://github.com/micmonay/egui/?branch=fix-keyboard#3607b114e46023a4adfde8305734b3893c78f951"
 dependencies = [
  "ab_glyph",
  "ahash",
