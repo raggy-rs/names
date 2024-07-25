@@ -22,14 +22,15 @@ impl NameEntry {
     pub fn new(name: String, info: Info) -> Self {
         let mut five_years = info
             .year_count
-            .array_chunks()
-            .map(|a: &[u32; 5]| a.iter().sum::<u32>());
+            .chunks(5)
+            .map(|a: &[u32]| a.iter().sum::<u32>());
         Self {
             name,
             sex: info.sex,
             total: info.year_count.iter().sum(),
-            year_count: array::try_from_fn(|_| five_years.next())
-                .expect("could not aggregate year_count"),
+            year_count: array::from_fn(|_| {
+                five_years.next().expect("could not aggregate year_count")
+            }),
             comments: String::new(),
             rating: None,
         }
@@ -37,7 +38,7 @@ impl NameEntry {
 }
 #[derive(PartialEq, Eq, Debug)]
 pub struct Info {
-    pub year_count: [u32; 40],
+    pub year_count: [u32; YEARS],
     pub sex: u8,
 }
 
@@ -91,14 +92,14 @@ pub fn deserialize(
 
         let name = String::from_utf8(buf[0..name_len].to_vec())?;
         reader.read_exact(&mut buf[0..YEARS * 4])?;
-        let mut counts = buf[0..YEARS * 4]
-            .array_chunks()
-            .map(|&x| u32::from_le_bytes(x));
         names.insert(
             name,
             Info {
                 sex,
-                year_count: array::try_from_fn(|_| counts.next()).unwrap(),
+                year_count: array::from_fn(|i| {
+                    let x = i * 4;
+                    u32::from_le_bytes([buf[x], buf[x + 1], buf[x + 2], buf[x + 3]])
+                }),
             },
         );
     }

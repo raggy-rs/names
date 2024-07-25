@@ -243,7 +243,8 @@ impl eframe::App for NamesApp {
                 "wikipedia",
                 format!("https://de.wikipedia.org/wiki/{}_(Vorname)", name),
             );
-            if let Ok([first, second]) = name.chars().next_chunk() {
+            let mut chars = name.chars();
+            if let (Some(first), Some(second)) = (chars.next(), chars.next()) {
                 ui.hyperlink_to(
                     "baby-vornamen.de",
                     format!(
