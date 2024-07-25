@@ -1,5 +1,3 @@
-use std::collections::{btree_map::Entry, BTreeSet};
-
 use crate::names::{self, NameEntry, Rating};
 use egui::Grid;
 use serde::{Deserialize, Serialize};
