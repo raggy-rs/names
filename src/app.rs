@@ -31,7 +31,7 @@ impl Default for NamesApp {
             .map(|(name, info)| NameEntry::new(name, info))
             .collect();
         names.sort_by_key(|x| (!x.year_count.last().unwrap(), x.name.to_owned()));
-        
+
         Self {
             part: "".to_owned(),
             names,
@@ -56,17 +56,26 @@ impl NamesApp {
         }else{
             Self::default()
         };
-        let filter: HashMap<String, Rating> = ron::de::from_str(&include_str!("../filter.txt")).unwrap();
-        x.names.iter_mut().for_each(|x|if x.rating.is_none(){
-            if x.name.len() >=6||x.name.len()<2||x.name.contains('-'){ x.rating = Some(Rating::Bad);return;}
-            if let Some(rating) = filter.get(&x.name){x.rating=Some(*rating);}});
+        let filter: HashMap<String, Rating> =
+            ron::de::from_str(&include_str!("../filter.txt")).unwrap();
+        x.names.iter_mut().for_each(|x| {
+            if x.rating.is_none() {
+                if x.name.len() >= 6 || x.name.len() < 2 || x.name.contains('-') {
+                    x.rating = Some(Rating::Bad);
+                    return;
+                }
+                if let Some(rating) = filter.get(&x.name) {
+                    x.rating = Some(*rating);
+                }
+            }
+        });
         x
     }
-    fn filtered_names(&mut self) -> impl Iterator<Item=(usize, &mut NameEntry)>{
+    fn filtered_names(&mut self) -> impl Iterator<Item = (usize, &mut NameEntry)> {
         self.names.iter_mut().enumerate().filter(|(_, x)| {
             let rating_match = match self.rating_filter {
                 RatingFilter::Any => true,
-                RatingFilter::NotBad => x.rating.map_or(true, |x|x==Rating::Good),
+                RatingFilter::NotBad => x.rating.map_or(true, |x| x == Rating::Good),
                 RatingFilter::NoRating => x.rating.is_none(),
                 RatingFilter::Is(r) => x.rating == Some(r),
             };
@@ -127,14 +136,15 @@ impl eframe::App for NamesApp {
                             &self
                                 .names
                                 .iter()
-                                .filter_map(|e| e.rating.map(|r|(&e.name, r)))
-                                .collect::<HashMap<_,_>>(),
+                                .filter_map(|e| e.rating.map(|r| (&e.name, r)))
+                                .collect::<HashMap<_, _>>(),
                         )
                         .expect("failed to serialize")
                     });
                 }
                 if ui.button("all bad").clicked() {
-                    self.filtered_names().for_each(|(_,n)|n.rating = Some(Rating::Bad));
+                    self.filtered_names()
+                        .for_each(|(_, n)| n.rating = Some(Rating::Bad));
                 }
                 ui.label(format!("{}", self.filtered_names().count()));
             });
