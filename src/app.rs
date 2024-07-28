@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::names::{self, NameEntry, Rating};
 use egui::Grid;
 use serde::{Deserialize, Serialize};
@@ -29,6 +31,7 @@ impl Default for NamesApp {
             .map(|(name, info)| NameEntry::new(name, info))
             .collect();
         names.sort_by_key(|x| (!x.year_count.last().unwrap(), x.name.to_owned()));
+        
         Self {
             part: "".to_owned(),
             names,
@@ -45,28 +48,35 @@ impl NamesApp {
         // This is also where you can customize the look and feel of egui using
         // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
 
+        let mut x =
         // Load previous app state (if any).
         // Note that you must enable the `persistence` feature for this to work.
         if let Some(storage) = cc.storage {
-            return eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
-        }
-        Self::default()
-        /*let mut new = NamesApp::default();
-        if let Some(storage) = cc.storage {
-            for name in new.names.iter_mut() {
-                if let Some(data) = storage.get_string(&name.name) {
-                    if let Some((rating, comments)) = data.split_once('|') {
-                        name.rating = match rating {
-                            "Some(Good)" => Some(Rating::Good),
-                            "Some(Bad)" => Some(Rating::Bad),
-                            _ => None,
-                        };
-                        name.comments = comments.to_string();
-                    }
-                }
-            }
-        }
-        new*/
+            eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default()
+        }else{
+            Self::default()
+        };
+        let filter: Vec<NameEntry> = ron::de::from_str(&include_str!("../filter.txt")).unwrap();
+        let filter: HashMap<String, Option<Rating>> = filter.into_iter().map(|x|(x.name, x.rating)).collect();
+        x.names.iter_mut().for_each(|x|if x.rating.is_none(){
+            if x.name.len() >6||x.name.len()<2||x.name.contains('-'){ x.rating = Some(Rating::Bad);return;}
+            if let Some(rating) = filter.get(&x.name){x.rating=*rating;}});
+        x
+    }
+    fn filtered_names(&mut self) -> impl Iterator<Item=(usize, &mut NameEntry)>{
+        self.names.iter_mut().enumerate().filter(|(_, x)| {
+            let rating_match = match self.rating_filter {
+                RatingFilter::Any => true,
+                RatingFilter::Rating => x.rating.is_some(),
+                RatingFilter::NoRating => x.rating.is_none(),
+                RatingFilter::Is(r) => x.rating == Some(r),
+            };
+
+            x.name.len() <= self.max_len
+                && x.sex == 1
+                && x.name.contains(&self.part)
+                && rating_match
+        })
     }
 }
 
@@ -124,6 +134,10 @@ impl eframe::App for NamesApp {
                         .expect("failed to serialize")
                     });
                 }
+                if ui.button("all bad").clicked() {
+                    self.filtered_names().for_each(|(_,n)|n.rating = Some(Rating::Bad));
+                }
+                ui.label(format!("{}", self.filtered_names().count()));
             });
             if ui.text_edit_singleline(&mut self.part).clicked() {
                 ctx.output_mut(|x| {
@@ -166,36 +180,13 @@ impl eframe::App for NamesApp {
                     .striped(true)
                     .min_col_width(15.0)
                     .show(ui, |ui| {
-                        for (idx, entry) in self.names.iter_mut().enumerate().filter(|(_, x)| {
-                            let rating_match = match self.rating_filter {
-                                RatingFilter::Any => true,
-                                RatingFilter::Rating => x.rating.is_some(),
-                                RatingFilter::NoRating => x.rating.is_none(),
-                                RatingFilter::Is(r) => x.rating == Some(r),
-                            };
-
-                            x.name.len() <= self.max_len
-                                && x.sex == 1
-                                && x.name.contains(&self.part)
-                                && rating_match
-                        }) {
-                            /*egui::ComboBox::from_label(&entry.name)
-                            .selected_text(match entry.rating {
-                                Some(Rating::Good) => "+",
-                                Some(Rating::Bad) => "-",
-                                None => "",
-                            })
-                            .show_ui(ui, |ui| {
-                                ui.selectable_value(&mut entry.rating, Some(Rating::Good), "+");
-                                ui.selectable_value(&mut entry.rating, Some(Rating::Bad), "-");
-                                ui.selectable_value(&mut entry.rating, None, "");
-                            });*/
-
+                        let mut set_idx = self.current;
+                        for (idx, entry) in self.filtered_names() {
                             if ui
                                 .link(&entry.name) //format!("{} {}", , entry.total))
                                 .clicked()
                             {
-                                self.current = idx;
+                                set_idx = idx;
                             } //, entry.year_count));
                             ui.label(entry.total.to_string());
                             let mut good_button = ui.button("+");
@@ -217,6 +208,7 @@ impl eframe::App for NamesApp {
                             }
                             ui.end_row();
                         }
+                        self.current = set_idx;
                     });
             });
         });
