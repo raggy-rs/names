@@ -56,11 +56,10 @@ impl NamesApp {
         }else{
             Self::default()
         };
-        let filter: Vec<NameEntry> = ron::de::from_str(&include_str!("../filter.txt")).unwrap();
-        let filter: HashMap<String, Option<Rating>> = filter.into_iter().map(|x|(x.name, x.rating)).collect();
+        let filter: HashMap<String, Rating> = ron::de::from_str(&include_str!("../filter.txt")).unwrap();
         x.names.iter_mut().for_each(|x|if x.rating.is_none(){
-            if x.name.len() >6||x.name.len()<2||x.name.contains('-'){ x.rating = Some(Rating::Bad);return;}
-            if let Some(rating) = filter.get(&x.name){x.rating=*rating;}});
+            if x.name.len() >=6||x.name.len()<2||x.name.contains('-'){ x.rating = Some(Rating::Bad);return;}
+            if let Some(rating) = filter.get(&x.name){x.rating=Some(*rating);}});
         x
     }
     fn filtered_names(&mut self) -> impl Iterator<Item=(usize, &mut NameEntry)>{
@@ -128,8 +127,8 @@ impl eframe::App for NamesApp {
                             &self
                                 .names
                                 .iter()
-                                .filter(|e| e.rating.is_some() || !e.comments.is_empty())
-                                .collect::<Vec<_>>(),
+                                .filter_map(|e| e.rating.map(|r|(&e.name, r)))
+                                .collect::<HashMap<_,_>>(),
                         )
                         .expect("failed to serialize")
                     });
