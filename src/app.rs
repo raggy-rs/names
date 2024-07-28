@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 #[derive(PartialEq, Eq, Deserialize, Serialize)]
 enum RatingFilter {
     Any,
-    Rating,
+    NotBad,
     NoRating,
     Is(Rating),
 }
@@ -36,8 +36,8 @@ impl Default for NamesApp {
             part: "".to_owned(),
             names,
             current: 0,
-            max_len: 4,
-            rating_filter: RatingFilter::Any,
+            max_len: 5,
+            rating_filter: RatingFilter::NotBad,
         }
     }
 }
@@ -66,7 +66,7 @@ impl NamesApp {
         self.names.iter_mut().enumerate().filter(|(_, x)| {
             let rating_match = match self.rating_filter {
                 RatingFilter::Any => true,
-                RatingFilter::Rating => x.rating.is_some(),
+                RatingFilter::NotBad => x.rating.map_or(true, |x|x==Rating::Good),
                 RatingFilter::NoRating => x.rating.is_none(),
                 RatingFilter::Is(r) => x.rating == Some(r),
             };
@@ -148,9 +148,9 @@ impl eframe::App for NamesApp {
             egui::ComboBox::from_label("Rating")
                 .selected_text(match self.rating_filter {
                     RatingFilter::Is(Rating::Good) => "Good",
+                    RatingFilter::NotBad => "Not Bad",
                     RatingFilter::Is(Rating::Bad) => "Bad",
                     RatingFilter::NoRating => "Not Rated",
-                    RatingFilter::Rating => "Rated",
                     RatingFilter::Any => "Any",
                 })
                 .show_ui(ui, |ui| {
@@ -159,13 +159,13 @@ impl eframe::App for NamesApp {
                         RatingFilter::Is(Rating::Good),
                         "Good",
                     );
+                    ui.selectable_value(&mut self.rating_filter, RatingFilter::NotBad, "Not Bad");
                     ui.selectable_value(
                         &mut self.rating_filter,
                         RatingFilter::Is(Rating::Bad),
                         "Bad",
                     );
                     ui.selectable_value(&mut self.rating_filter, RatingFilter::Any, "Any");
-                    ui.selectable_value(&mut self.rating_filter, RatingFilter::Rating, "Rated");
                     ui.selectable_value(
                         &mut self.rating_filter,
                         RatingFilter::NoRating,
